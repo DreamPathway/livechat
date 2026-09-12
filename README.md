@@ -3,7 +3,7 @@
 基于 **Cloudflare Workers** 的轻量在线客服系统：访客聊天（文字 + 图片）、管理后台、Telegram / 企业微信群机器人新消息通知、定时数据清理。原生 Hono + TypeScript 实现，无服务器、零运维。
 
 > 本项目由同名 PHP 版在线客服系统（见 [`reference/`](reference/)）迁移重构而来。
-
+> 📚 **图文部署教程**：https://opcgrow.org/article.php?id=130
 ## 功能特性
 
 - 💬 **访客聊天** — 文字 + 图片上传（存 R2），长轮询实时收发，链接自动可点击
@@ -96,8 +96,7 @@ npx wrangler secret put APP_BASE_URL
 也可以在后台 `/admin → 系统设置` 填写（env secret 优先级更高）。
 
 > 📖 完整部署指南（Token 权限清单 / secrets 清单表 / 报错对照表）见 **[`AGENTS.md`](AGENTS.md)**。
->
-> 📚 **图文部署教程**：https://opcgrow.org/article.php?id=130
+
 
 ## API 概览
 
