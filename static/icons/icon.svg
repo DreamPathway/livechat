@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#667eea"/>
+      <stop offset="100%" stop-color="#764ba2"/>
+    </linearGradient>
+  </defs>
+  <!-- 圆形渐变背景 -->
+  <circle cx="256" cy="256" r="256" fill="url(#bg)"/>
+  <!-- 聊天气泡 -->
+  <rect x="136" y="150" width="240" height="168" rx="36" fill="#ffffff"/>
+  <path d="M160 318 L160 358 L224 318 Z" fill="#ffffff"/>
+  <!-- 消息省略号 -->
+  <circle cx="216" cy="234" r="14" fill="#667eea"/>
+  <circle cx="256" cy="234" r="14" fill="#764ba2"/>
+  <circle cx="296" cy="234" r="14" fill="#a5b4fc"/>
+</svg>
