@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>客服管理后台</title>
+    <style>
+        :root { --primary: #667eea; --primary2: #764ba2; --bg: #f5f7fa; --white: #fff; --text: #333; --border: #e0e0e0; --danger: #ff4757; --success: #4caf50; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); min-height: 100vh; }
+
+        /* 登录页 */
+        .login-page { display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+        .login-box { background: var(--white); padding: 40px; border-radius: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.1); width: 100%; max-width: 400px; }
+        .login-box h1 { text-align: center; margin-bottom: 30px; color: var(--primary); }
+        .login-box input { width: 100%; padding: 15px; margin-bottom: 15px; border: 2px solid var(--border); border-radius: 10px; font-size: 16px; }
+        .login-box input:focus { outline: none; border-color: var(--primary); }
+        .login-box button { width: 100%; padding: 15px; background: linear-gradient(135deg, var(--primary) 0%, var(--primary2) 100%); color: white; border: none; border-radius: 10px; font-size: 16px; cursor: pointer; }
+        .login-error { color: var(--danger); text-align: center; margin-bottom: 15px; }
+
+        /* 管理后台 */
+        .admin-page { display: none; height: 100vh; }
+        .admin-page.active { display: flex; }
+
+        /* 侧边栏 */
+        .sidebar { width: 300px; background: var(--white); border-right: 1px solid var(--border); display: flex; flex-direction: column; }
+        .sidebar-hd { padding: 20px; background: linear-gradient(135deg, var(--primary) 0%, var(--primary2) 100%); color: white; }
+        .sidebar-hd h2 { font-size: 18px; margin-bottom: 5px; }
+        .sidebar-hd .unread { font-size: 13px; opacity: 0.9; }
+        .clients-list { flex: 1; overflow-y: auto; }
+        .client-item { padding: 15px; border-bottom: 1px solid var(--border); cursor: pointer; transition: 0.2s; }
+        .client-item:hover { background: #f8f9fa; }
+        .client-item.active { background: #e3f2fd; border-left: 4px solid var(--primary); }
+        .client-item .name { font-weight: 600; color: var(--text); display: flex; justify-content: space-between; align-items: center; }
+        .client-item .unread-badge { background: var(--danger); color: white; padding: 2px 8px; border-radius: 10px; font-size: 12px; }
+        .client-item .last-msg { font-size: 13px; color: #666; margin: 5px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .client-item .meta { font-size: 11px; color: #999; display: flex; justify-content: space-between; }
+
+        /* 主聊天区 */
+        .chat-area { flex: 1; display: flex; flex-direction: column; background: var(--white); }
+        .chat-hd { padding: 15px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        .chat-hd .title { font-size: 16px; font-weight: 600; }
+        .chat-hd .btns { display: flex; gap: 10px; }
+        .chat-hd button { padding: 8px 15px; border: none; border-radius: 8px; cursor: pointer; font-size: 13px; }
+        .hamburger { display: none; }
+        .sidebar-overlay { display: none; }
+        .btn-read { background: var(--primary); color: white; }
+        .btn-del { background: var(--danger); color: white; }
+        .btn-logout { background: #666; color: white; }
+
+        .chat-msgs { flex: 1; padding: 20px; overflow-y: auto; background: #fafafa; }
+        .message { margin-bottom: 15px; padding: 12px 15px; border-radius: 15px; max-width: 80%; animation: fadeIn 0.3s; }
+        .client-msg { background: var(--white); border: 1px solid var(--border); margin-right: auto; border-bottom-left-radius: 5px; }
+        .admin-msg { background: #e8f5e9; margin-left: auto; border-bottom-right-radius: 5px; }
+        .message.unread { background: #fff8e1; border-color: #ffd54f; }
+        .msg-hd { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 12px; }
+        .msg-hd .sender { font-weight: 600; }
+        .msg-hd .time { color: #999; }
+        .msg-hd .del-btn { background: none; border: none; color: #999; cursor: pointer; font-size: 16px; padding: 0 5px; }
+        .msg-hd .del-btn:hover { color: var(--danger); }
+        .msg-ct { font-size: 14px; line-height: 1.4; word-wrap: break-word; }
+        .msg-ct a { color: var(--primary); }
+        .msg-image { margin-top: 10px; cursor: pointer; position: relative; max-width: 200px; }
+        .msg-image img { width: 100%; border-radius: 8px; }
+        .msg-image span { position: absolute; bottom: 5px; left: 5px; right: 5px; background: rgba(0,0,0,0.5); color: white; font-size: 11px; text-align: center; border-radius: 0 0 8px 8px; padding: 3px; }
+
+        .chat-input { padding: 15px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 10px; }
+        .chat-input .input-row { display: flex; gap: 10px; align-items: flex-end; }
+        .chat-input textarea { flex: 1; padding: 12px; border: 2px solid var(--border); border-radius: 20px; resize: none; font-size: 14px; min-height: 45px; max-height: 100px; }
+        .chat-input textarea:focus { outline: none; border-color: var(--primary); }
+        .chat-input button { padding: 12px 25px; background: linear-gradient(135deg, var(--primary) 0%, var(--primary2) 100%); color: white; border: none; border-radius: 25px; cursor: pointer; font-size: 14px; }
+        .chat-input button:disabled { opacity: 0.6; }
+        .admin-upload-btn { width: 45px; height: 45px; border-radius: 50%; border: 2px dashed #ccc; background: #f0f0f0; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 18px; position: relative; overflow: hidden; transition: 0.3s; }
+        .admin-upload-btn:hover { border-color: var(--primary); background: #e8eaf6; }
+        .admin-upload-btn input { position: absolute; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+        .upload-preview-area { display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: #f5f5f5; border-radius: 10px; }
+        .upload-preview-area:empty { display: none; }
+        .preview-thumb { width: 60px; height: 60px; object-fit: cover; border-radius: 8px; border: 2px solid var(--primary); }
+        .preview-info { flex: 1; }
+        .preview-info .name { font-size: 13px; color: var(--text); font-weight: 500; }
+        .preview-info .size { font-size: 11px; color: #666; }
+        .preview-remove { background: var(--danger); color: white; border: none; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; font-size: 16px; }
+
+        .no-client { display: flex; align-items: center; justify-content: center; height: 100%; color: #999; flex-direction: column; }
+        .no-client::before { font-size: 50px; margin-bottom: 20px; }
+
+        /* 图片预览 */
+        .img-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 9999; align-items: center; justify-content: center; }
+        .img-modal.active { display: flex; }
+        .img-modal img { max-width: 95%; max-height: 95%; }
+        .img-modal .close { position: absolute; top: 20px; right: 20px; color: white; font-size: 40px; cursor: pointer; }
+
+        /* 设置面板 */
+        .settings-btn { position: fixed; top: 50%; right: 0; transform: translateY(-50%); width: 50px; height: 50px; background: linear-gradient(135deg, var(--primary) 0%, var(--primary2) 100%); color: white; border-radius: 25px 0 0 25px; border: none; font-size: 20px; cursor: pointer; box-shadow: -4px 0 15px rgba(0,0,0,0.2); z-index: 999; transition: 0.3s; }
+        .settings-btn:hover { width: 55px; }
+        .settings-panel { display: none; position: fixed; top: 0; right: -350px; width: 350px; height: 100%; background: white; z-index: 1000; box-shadow: -5px 0 20px rgba(0,0,0,0.1); transition: 0.3s; flex-direction: column; }
+        .settings-panel.active { display: flex; right: 0; }
+        .settings-panel h3 { padding: 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; }
+        .settings-panel .close { cursor: pointer; font-size: 20px; }
+        .settings-panel .content { flex: 1; overflow-y: auto; padding: 20px; }
+        .settings-panel .form-group { margin-bottom: 15px; }
+        .settings-panel label { display: block; margin-bottom: 5px; font-size: 13px; color: #666; }
+        .settings-panel input[type="text"], .settings-panel input[type="password"] { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; }
+        .settings-panel .save-btn { width: 100%; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 8px; cursor: pointer; margin-top: 20px; }
+        .settings-panel .avatar-preview { width: 80px; height: 80px; margin: 10px auto; border-radius: 50%; overflow: hidden; border: 3px solid var(--primary); }
+        .settings-panel .avatar-preview img { width: 100%; height: 100%; object-fit: cover; }
+        .settings-panel .upload-btn { width: 100%; padding: 10px; background: var(--success); color: white; border: none; border-radius: 8px; cursor: pointer; margin-top: 10px; }
+        .settings-panel .change-pwd-btn { width: 100%; padding: 10px; background: #ff9800; color: white; border: none; border-radius: 8px; cursor: pointer; margin-top: 10px; }
+        .settings-panel hr { margin: 20px 0; border: none; border-top: 1px solid var(--border); }
+
+        .empty-msg { text-align: center; color: #999; padding: 40px; }
+
+        /* 空白界面未读提醒横幅 */
+        .unread-banner { margin: 10px 12px; padding: 12px 16px; background: linear-gradient(135deg, #fff3e0, #ffe0b2); border: 1px solid #ffb74d; border-radius: 12px; color: #e65100; font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px; box-shadow: 0 2px 8px rgba(230, 81, 0, 0.15); flex-shrink: 0; }
+        .unread-banner b { color: var(--danger); font-size: 18px; }
+
+        /* 未读客户行高亮（红底红字 + 徽章脉冲） */
+        .client-item.has-unread { background: #fff5f5; }
+        .client-item.has-unread .name { color: var(--danger); font-weight: 700; }
+        .client-item.has-unread .last-msg { color: #c62828; }
+        @keyframes badgePulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.2); } }
+        .client-item.has-unread .unread-badge { animation: badgePulse 1.5s infinite; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @media (max-width: 768px) {
+            /* 汉堡按钮：左上角，仅移动端显示 */
+            .hamburger { display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; padding: 0; font-size: 20px; background: var(--primary); color: white; border-radius: 8px; flex-shrink: 0; }
+            /* 抽屉遮罩 */
+            .sidebar-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,.5); z-index: 1190; }
+            .sidebar-overlay.open { display: block; }
+            .admin-page { position: relative; }
+            /* 侧边栏：抽屉式，默认收起 */
+            .sidebar { position: fixed; top: 0; left: 0; width: 78%; max-width: 300px; height: 100%; z-index: 1200; transform: translateX(-100%); transition: transform .3s ease; box-shadow: 4px 0 20px rgba(0,0,0,.15); }
+            .sidebar.open { transform: translateX(0); }
+            /* 聊天区占主屏 */
+            .chat-area { width: 100%; }
+            /* 内部紧凑 */
+            .chat-hd { padding: 10px 12px; gap: 10px; }
+            .chat-hd .title { font-size: 14px; flex: 1; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+            .chat-hd button { padding: 6px 10px; font-size: 12px; }
+            .chat-msgs { padding: 12px; }
+            .message { max-width: 90%; }
+            .chat-input { padding: 10px 12px; }
+            .client-item { padding: 12px; }
+            .sidebar-hd { padding: 14px 16px; }
+        }
+    </style>
+</head>
+<body>
+    <!-- 登录页面 -->
+    <div class="login-page" id="loginPage">
+        <div class="login-box">
+            <h1>🔐 管理后台登录</h1>
+            <div class="login-error" id="loginError"></div>
+            <form id="loginForm">
+                <input type="password" id="loginPassword" placeholder="请输入管理密码" required autofocus>
+                <button type="submit">登录</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- 管理后台 -->
+    <div class="admin-page active" id="adminPage">
+        <!-- 侧边栏 -->
+        <div class="sidebar">
+            <div class="sidebar-hd">
+                <h2>👥 客户列表</h2>
+                <div class="unread" id="unreadTotal">加载中...</div>
+            </div>
+            <div class="clients-list" id="clientsList"></div>
+        </div>
+
+        <!-- 移动端抽屉遮罩 -->
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+        <!-- 聊天区 -->
+        <div class="chat-area">
+            <div class="chat-hd">
+                <button class="hamburger" id="hamburgerBtn" title="客户列表">☰</button>
+                <div class="title" id="chatTitle">👈 请选择客户</div>
+                <div class="btns">
+                    <button class="btn-read" id="markReadBtn" style="display:none">✓ 标记已读</button>
+                    <button class="btn-del" id="logoutBtn">🚪 退出</button>
+                </div>
+            </div>
+            <!-- 空白界面未读提醒横幅 -->
+            <div class="unread-banner" id="unreadBanner" style="display:none">🔔 有 <b id="unreadBannerCount">0</b> 条新消息未处理</div>
+            <div class="chat-msgs" id="chatMsgs">
+                <div class="no-client">请从左侧选择一个客户开始对话</div>
+            </div>
+            <div class="chat-input" id="chatInput" style="display:none">
+                <div id="adminUploadPreview" class="upload-preview-area"></div>
+                <div class="input-row">
+                    <textarea id="replyInput" placeholder="输入回复内容..." rows="1"></textarea>
+                    <div class="admin-upload-btn" title="发送图片">
+                        <input type="file" id="adminFileInput" accept="image/*">
+                        📎
+                    </div>
+                    <button id="sendBtn">发送</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 图片预览 -->
+    <div class="img-modal" id="imgModal">
+        <span class="close" onclick="closeImg()">×</span>
+        <img id="modalImg" src="">
+    </div>
+
+    <!-- 设置按钮 -->
+    <button class="settings-btn" id="settingsBtn">⚙️</button>
+
+    <!-- 设置面板 -->
+    <div class="settings-panel" id="settingsPanel">
+        <h3>⚙️ 系统设置 <span class="close" onclick="toggleSettings()">×</span></h3>
+        <div class="content">
+            <div class="form-group">
+                <label>更改管理密码（需原密码）</label>
+                <input type="password" id="oldPassword" placeholder="原密码">
+                <input type="password" id="newPassword" placeholder="新密码" style="margin-top: 8px;">
+                <input type="password" id="confirmPassword" placeholder="确认新密码" style="margin-top: 8px;">
+                <button class="change-pwd-btn" onclick="changePassword()">更改密码</button>
+            </div>
+
+            <hr style="margin: 20px 0; border: none; border-top: 1px solid var(--border);">
+
+            <div class="form-group">
+                <label>客服标题</label>
+                <input type="text" id="setTitle">
+            </div>
+            <div class="form-group">
+                <label>管理员名称</label>
+                <input type="text" id="setAdminName">
+            </div>
+            <div class="form-group">
+                <label><input type="checkbox" id="setTgEnabled"> 启用 Telegram 通知</label>
+            </div>
+            <div class="form-group">
+                <label>Bot Token</label>
+                <input type="text" id="setTgToken" placeholder="123456:ABC...">
+                <div style="font-size:11px;color:#999;margin-top:4px;">若显示 ***ENV*** 表示通过环境变量配置，保存时不会覆盖</div>
+            </div>
+            <div class="form-group">
+                <label>管理员ID</label>
+                <input type="text" id="setTgAdmin">
+            </div>
+
+            <hr style="margin: 20px 0; border: none; border-top: 1px solid var(--border);">
+
+            <div class="form-group">
+                <label><input type="checkbox" id="setWecomEnabled"> 启用企业微信机器人通知</label>
+            </div>
+            <div class="form-group">
+                <label>Webhook 地址</label>
+                <input type="text" id="setWecomWebhook" placeholder="https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=...">
+                <div style="font-size:11px;color:#999;margin-top:4px;">可填完整地址或仅填 key；若显示 ***ENV*** 表示通过环境变量配置，保存时不会覆盖</div>
+            </div>
+            <button class="save-btn" onclick="saveSettings()">保存设置</button>
+        </div>
+    </div>
+
+    <script>
+        var API = '/api/admin';
+        var currentClient = null;
+        var displayedIds = {};
+        var adminSelectedFile = null;
+
+        // ── 登录 / 登出 ──
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            var pwd = document.getElementById('loginPassword').value;
+            var fd = new FormData();
+            fd.append('password', pwd);
+            fetch(API + '/login', { method: 'POST', body: fd })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.success) {
+                    document.getElementById('loginError').textContent = '';
+                    showAdmin();
+                } else {
+                    document.getElementById('loginError').textContent = data.error || '登录失败';
+                }
+            })
+            .catch(function(err) { document.getElementById('loginError').textContent = '网络错误'; });
+        });
+
+        document.getElementById('logoutBtn').addEventListener('click', function() {
+            fetch(API + '/logout', { method: 'POST' })
+            .then(function() { showLogin(); });
+        });
+
+        function showLogin() {
+            document.getElementById('adminPage').classList.remove('active');
+            document.getElementById('loginPage').style.display = 'flex';
+            document.getElementById('settingsBtn').style.display = 'none';
+        }
+
+        function showAdmin() {
+            document.getElementById('loginPage').style.display = 'none';
+            document.getElementById('adminPage').classList.add('active');
+            document.getElementById('settingsBtn').style.display = 'block';
+            loadClients();
+            loadSettings();
+        }
+
+        // ── 401 统一处理 ──
+        function handleResp(r) {
+            if (r.status === 401) { showLogin(); throw new Error('未登录'); }
+            return r;
+        }
+
+        // ── 客户列表 ──
+        function loadClients() {
+            fetch(API + '/get_clients', { method: 'POST', body: new URLSearchParams() })
+            .then(handleResp)
+            .then(function(r) { return r.json(); })
+            .then(function(clients) {
+                if (clients.error) { if (clients.error === '未登录') showLogin(); return; }
+                var list = document.getElementById('clientsList');
+                var totalUnread = 0;
+                var html = '';
+
+                clients.forEach(function(c) {
+                    totalUnread += c.unread || 0;
+                    var isActive = currentClient === c.client_id ? 'active' : '';
+                    var hasUnread = c.unread > 0 ? 'has-unread' : '';
+                    var unreadBadge = c.unread > 0 ? '<span class="unread-badge">' + c.unread + '</span>' : '';
+                    var nickname = (c.nickname || '未知用户').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                    var lastMsg = (c.last_message || '无消息').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                    var ip = c.ip || '';
+
+                    html += '<div class="client-item ' + isActive + ' ' + hasUnread + '" data-client-id="' + c.client_id + '">';
+                    html += '<div class="name">' + nickname + ' ' + unreadBadge + '</div>';
+                    html += '<div class="last-msg">' + lastMsg + '</div>';
+                    html += '<div class="meta"><span>' + ip + '</span><span>' + timeAgo(c.last_active) + '</span></div>';
+                    html += '</div>';
+                });
+
+                list.innerHTML = html || '<div class="empty-msg">暂无客户</div>';
+                document.getElementById('unreadTotal').textContent = totalUnread + ' 条未读消息';
+
+                // 空白界面（未选客户或聊天区无消息）时显示未读横幅
+                var banner = document.getElementById('unreadBanner');
+                var hasMessages = document.querySelectorAll('#chatMsgs .message').length > 0;
+                if (totalUnread > 0 && !hasMessages) {
+                    document.getElementById('unreadBannerCount').textContent = totalUnread;
+                    banner.style.display = 'flex';
+                } else {
+                    banner.style.display = 'none';
+                }
+
+                list.querySelectorAll('.client-item').forEach(function(item) {
+                    item.addEventListener('click', function() {
+                        var clientId = this.getAttribute('data-client-id');
+                        var nameEl = this.querySelector('.name');
+                        var name = nameEl ? nameEl.textContent.split(' ')[0] : '客户';
+                        selectClient(clientId, name);
+                    });
+                });
+            })
+            .catch(function(err) { console.error('加载客户列表失败:', err); });
+        }
+
+        // ── 选择客户 ──
+        function selectClient(id, name) {
+            currentClient = id;
+            document.getElementById('chatTitle').textContent = '💬 ' + name;
+            document.getElementById('chatInput').style.display = 'flex';
+            document.getElementById('markReadBtn').style.display = 'inline-block';
+            loadMessages(id);
+            loadClients();
+            closeSidebar(); // 移动端选中后收起抽屉
+        }
+
+        // ── 移动端汉堡菜单（抽屉式客户列表） ──
+        var sidebarEl = document.querySelector('.sidebar');
+        var sidebarOverlay = document.getElementById('sidebarOverlay');
+        function openSidebar() { sidebarEl.classList.add('open'); sidebarOverlay.classList.add('open'); }
+        function closeSidebar() { sidebarEl.classList.remove('open'); sidebarOverlay.classList.remove('open'); }
+        document.getElementById('hamburgerBtn').addEventListener('click', openSidebar);
+        sidebarOverlay.addEventListener('click', closeSidebar);
+
+        // ── 加载消息 ──
+        function loadMessages(clientId) {
+            if (!displayedIds[clientId]) displayedIds[clientId] = new Set();
+
+            var fd = new URLSearchParams();
+            fd.append('client_id', clientId);
+
+            fetch(API + '/get_messages', { method: 'POST', body: fd })
+            .then(handleResp)
+            .then(function(r) { return r.text(); })
+            .then(function(html) {
+                if (html.indexOf('未登录') > -1 && html.indexOf('缺少') === -1) return;
+                var parser = new DOMParser();
+                var doc = parser.parseFromString(html, 'text/html');
+                var msgs = doc.querySelectorAll('.message');
+                var container = document.getElementById('chatMsgs');
+
+                if (displayedIds[clientId].size === 0) {
+                    container.innerHTML = '';
+                }
+
+                msgs.forEach(function(m) {
+                    var id = m.dataset.id;
+                    if (id && !displayedIds[clientId].has(id)) {
+                        container.appendChild(m);
+                        displayedIds[clientId].add(id);
+                    }
+                });
+
+                container.scrollTop = container.scrollHeight;
+            })
+            .catch(function(err) { console.error('加载消息失败:', err); });
+        }
+
+        // ── 发送回复 ──
+        function sendReply() {
+            var input = document.getElementById('replyInput');
+            var msg = input.value.trim();
+            if (!msg && !adminSelectedFile) return;
+            if (!currentClient) { alert('请先选择客户'); return; }
+
+            var sendBtn = document.getElementById('sendBtn');
+            sendBtn.disabled = true;
+            sendBtn.textContent = '发送中...';
+
+            var formData = new FormData();
+            formData.append('client_id', currentClient);
+            if (msg) formData.append('message', msg);
+            if (adminSelectedFile) formData.append('image', adminSelectedFile);
+
+            fetch(API + '/send_message', { method: 'POST', body: formData })
+            .then(handleResp)
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.success) {
+                    input.value = '';
+                    removeAdminPreview();
+                    loadMessages(currentClient);
+                } else {
+                    alert('发送失败: ' + (data.error || '未知错误'));
+                }
+            })
+            .catch(function(err) { alert('发送失败: ' + err.message); })
+            .finally(function() {
+                sendBtn.disabled = false;
+                sendBtn.textContent = '发送';
+            });
+        }
+
+        // ── 删除消息 ──
+        function deleteMsg(msgId) {
+            if (!confirm('确定删除?')) return;
+            var fd = new URLSearchParams();
+            fd.append('client_id', currentClient);
+            fd.append('message_id', msgId);
+            fetch(API + '/delete_message', { method: 'POST', body: fd })
+            .then(handleResp)
+            .then(function() { loadMessages(currentClient); });
+        }
+
+        // ── 标记已读 ──
+        document.getElementById('markReadBtn').addEventListener('click', function() {
+            if (!currentClient) return;
+            var fd = new URLSearchParams();
+            fd.append('client_id', currentClient);
+            fetch(API + '/mark_read', { method: 'POST', body: fd })
+            .then(handleResp)
+            .then(function() { loadMessages(currentClient); loadClients(); });
+        });
+
+        // ── 图片预览 ──
+        function viewImage(src) {
+            document.getElementById('modalImg').src = src;
+            document.getElementById('imgModal').classList.add('active');
+        }
+        function closeImg() { document.getElementById('imgModal').classList.remove('active'); }
+        document.getElementById('chatMsgs').addEventListener('click', function(e) {
+            if (e.target.closest('.msg-image')) {
+                var img = e.target.closest('.msg-image').querySelector('img');
+                if (img) viewImage(img.src);
+            }
+        });
+
+        // ── 设置 ──
+        function toggleSettings() {
+            document.getElementById('settingsPanel').classList.toggle('active');
+        }
+        document.getElementById('settingsBtn').addEventListener('click', toggleSettings);
+
+        function loadSettings() {
+            fetch(API + '/get_settings', { method: 'POST', body: new URLSearchParams() })
+            .then(handleResp)
+            .then(function(r) { return r.json(); })
+            .then(function(s) {
+                document.getElementById('setTitle').value = s.chat_title || '在线客服';
+                document.getElementById('setAdminName').value = s.admin_name || '客服 Live chat';
+                document.getElementById('setTgEnabled').checked = String(s.telegram_enabled) === '1';
+                document.getElementById('setTgToken').value = s.telegram_token || '';
+                document.getElementById('setTgAdmin').value = s.telegram_admin_id || '';
+                document.getElementById('setWecomEnabled').checked = String(s.wecom_enabled) === '1';
+                document.getElementById('setWecomWebhook').value = s.wecom_webhook || '';
+            })
+            .catch(function(err) { console.error('加载设置失败:', err); });
+        }
+
+        function saveSettings() {
+            var fd = new URLSearchParams();
+            fd.append('chat_title', document.getElementById('setTitle').value.trim() || '在线客服');
+            fd.append('admin_name', document.getElementById('setAdminName').value.trim() || '客服 Live chat');
+            fd.append('telegram_enabled', document.getElementById('setTgEnabled').checked ? '1' : '0');
+            fd.append('telegram_token', document.getElementById('setTgToken').value.trim());
+            fd.append('telegram_admin_id', document.getElementById('setTgAdmin').value.trim());
+            fd.append('wecom_enabled', document.getElementById('setWecomEnabled').checked ? '1' : '0');
+            fd.append('wecom_webhook', document.getElementById('setWecomWebhook').value.trim());
+
+            fetch(API + '/update_settings', { method: 'POST', body: fd })
+            .then(handleResp)
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.success) { alert('设置保存成功'); toggleSettings(); }
+                else alert('保存失败: ' + (data.error || '未知错误'));
+            })
+            .catch(function(err) { alert('保存失败: ' + err.message); });
+        }
+
+        // ── 更改密码 ──
+        function changePassword() {
+            var oldPwd = document.getElementById('oldPassword').value;
+            var newPwd = document.getElementById('newPassword').value;
+            var confirmPwd = document.getElementById('confirmPassword').value;
+
+            if (!newPwd || newPwd.length < 4) { alert('密码长度至少4位'); return; }
+            if (newPwd !== confirmPwd) { alert('两次输入的密码不一致'); return; }
+            if (!confirm('确定要更改管理密码吗？')) return;
+
+            var fd = new URLSearchParams();
+            fd.append('old_password', oldPwd);
+            fd.append('new_password', newPwd);
+
+            fetch(API + '/change_password', { method: 'POST', body: fd })
+            .then(handleResp)
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.success) {
+                    alert('密码更改成功！请使用新密码重新登录。');
+                    document.getElementById('oldPassword').value = '';
+                    document.getElementById('newPassword').value = '';
+                    document.getElementById('confirmPassword').value = '';
+                    toggleSettings();
+                    setTimeout(showLogin, 800);
+                } else {
+                    alert('更改失败: ' + (data.error || '未知错误'));
+                }
+            })
+            .catch(function(err) { alert('更改失败: ' + err.message); });
+        }
+
+        // ── 文件选择（管理员发图） ──
+        document.getElementById('adminFileInput').addEventListener('change', function() {
+            if (this.files[0]) handleAdminFileSelect(this.files[0]);
+        });
+
+        function handleAdminFileSelect(file) {
+            if (file.size > 5 * 1024 * 1024) { alert('文件大小不能超过5MB'); return; }
+            if (!file.type.startsWith('image/')) { alert('只能上传图片文件'); return; }
+            adminSelectedFile = file;
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('adminUploadPreview').innerHTML =
+                    '<img src="' + e.target.result + '" class="preview-thumb">' +
+                    '<div class="preview-info">' +
+                    '<div class="name">' + file.name + '</div>' +
+                    '<div class="size">' + (file.size / 1024).toFixed(1) + ' KB</div>' +
+                    '</div>' +
+                    '<button class="preview-remove" onclick="removeAdminPreview()">×</button>';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function removeAdminPreview() {
+            adminSelectedFile = null;
+            document.getElementById('adminUploadPreview').innerHTML = '';
+            document.getElementById('adminFileInput').value = '';
+        }
+
+        // ── 回车发送 ──
+        document.getElementById('replyInput').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendReply(); }
+        });
+
+        // ── 时间格式化 ──
+        function timeAgo(ts) {
+            if (!ts) return '';
+            var diff = Math.floor((Date.now()/1000 - ts) / 60);
+            if (diff < 1) return '刚刚';
+            if (diff < 60) return diff + '分钟前';
+            if (diff < 1440) return Math.floor(diff/60) + '小时前';
+            return Math.floor(diff/1440) + '天前';
+        }
+
+        // ── 初始化：探测登录状态 ──
+        fetch(API + '/get_clients', { method: 'POST', body: new URLSearchParams() })
+        .then(function(r) {
+            if (r.status === 401) { showLogin(); return null; }
+            return r.json();
+        })
+        .then(function(clients) {
+            if (clients === null) return;
+            showAdmin();
+        })
+        .catch(function() { showLogin(); });
+
+        // 轮询
+        setInterval(function() {
+            if (document.getElementById('adminPage').classList.contains('active')) loadClients();
+        }, 5000);
+        setInterval(function() {
+            if (currentClient && document.getElementById('adminPage').classList.contains('active')) loadMessages(currentClient);
+        }, 3000);
+    </script>
+</body>
+</html>
