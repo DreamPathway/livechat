@@ -13,6 +13,7 @@
 - 💼 **企业微信通知** — 群机器人 webhook 推送（与 Telegram 并行、独立节流）
 - 🧹 **定时清理** — 每日 03:00 UTC：每客户端保留最新 20% 消息（最少 50 条），删除 90 天无消息的僵尸客户端
 - 📦 **零配置部署** — `npm run setup` 一键创建 D1 + R2、回填配置、执行迁移
+- 📲 **PWA 管理后台** — 可安装到桌面 / 手机主屏，离线可用，独立窗口运行
 
 ## 技术栈
 
@@ -41,7 +42,10 @@ livechat-system-worker/
 │   └── util.ts          # 通用小工具
 ├── static/              # Workers Assets 静态页面
 │   ├── index.html       # 访客聊天页
-│   └── admin.html       # 管理后台页
+│   ├── admin.html       # 管理后台页（PWA 入口）
+│   ├── manifest.webmanifest  # PWA 清单（安装到桌面/主屏）
+│   ├── sw.js            # Service Worker（管理后台离线缓存）
+│   └── icons/           # PWA 图标（SVG）
 ├── migrations/          # D1 迁移（幂等）
 ├── scripts/
 │   ├── setup.mjs        # 一键初始化（建 D1/R2、回填 ID、迁移、生成密码）
@@ -92,6 +96,8 @@ npx wrangler secret put APP_BASE_URL
 也可以在后台 `/admin → 系统设置` 填写（env secret 优先级更高）。
 
 > 📖 完整部署指南（Token 权限清单 / secrets 清单表 / 报错对照表）见 **[`AGENTS.md`](AGENTS.md)**。
+>
+> 📚 **图文部署教程**：https://opcgrow.org/article.php?id=130
 
 ## API 概览
 

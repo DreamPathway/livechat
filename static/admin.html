@@ -4,6 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>客服管理后台</title>
+    <!-- PWA -->
+    <link rel="manifest" href="/manifest.webmanifest">
+    <meta name="theme-color" content="#667eea">
+    <link rel="icon" href="/icons/icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/icons/icon.svg">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="客服后台">
     <style>
         :root { --primary: #667eea; --primary2: #764ba2; --bg: #f5f7fa; --white: #fff; --text: #333; --border: #e0e0e0; --danger: #ff4757; --success: #4caf50; }
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -620,6 +629,18 @@
         setInterval(function() {
             if (currentClient && document.getElementById('adminPage').classList.contains('active')) loadMessages(currentClient);
         }, 3000);
+    </script>
+    <script>
+        // PWA: 注册 Service Worker（仅后台，登录前也可离线安装）
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('/sw.js').then(function(reg) {
+                    console.log('[PWA] Service Worker registered:', reg.scope);
+                }).catch(function(err) {
+                    console.warn('[PWA] Service Worker registration failed:', err);
+                });
+            });
+        }
     </script>
 </body>
 </html>
