@@ -1,0 +1,42 @@
+# ===== 依赖 =====
+node_modules/
+bower_components/
+
+# ===== 构建产物 =====
+dist/
+build/
+.wrangler/
+
+# ===== 环境变量 / 密钥（切勿提交）=====
+.dev.vars
+.env
+.env.*
+!.env.example
+
+# ===== 数据库 / 备份 / 临时文件 =====
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+*.bak
+*.bak.*
+*_tmp.mjs
+
+# ===== 用户数据（隐私，切勿提交）=====
+# reference/ 为 PHP 原版参考代码；其 uploads/ 含真实聊天图片，不随开源仓库发布
+reference/uploads/
+
+# ===== 日志 =====
+*.log
+
+# ===== IDE / 编辑器 =====
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# ===== OS =====
+.DS_Store
+Thumbs.db

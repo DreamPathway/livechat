@@ -1,0 +1,15 @@
+# ===== 必填（首次部署）=====
+# 管理员初始密码：首次登录 /admin 时用于初始化后台密码（PBKDF2 写入 settings 表）
+# 登录后请在后台「修改密码」改成自己的强密码，之后此 secret 可删除
+ADMIN_PASSWORD=change_me_strong_password
+
+# ===== 可选（不填则功能降级；也可在后台 /admin → 系统设置 维护）=====
+# Telegram 机器人通知（新消息推送到管理员；@BotFather 创建机器人获取 token）
+TELEGRAM_BOT_TOKEN=
+TELEGRAM_ADMIN_ID=
+
+# 企业微信机器人通知（完整 webhook URL，或仅填 key；企业微信 → 群机器人 → 添加）
+WECOM_WEBHOOK_URL=
+
+# 站点对外基础 URL（通知消息里的管理后台链接；默认取请求来源 Origin）
+APP_BASE_URL=
