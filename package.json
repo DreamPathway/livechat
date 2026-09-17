@@ -8,8 +8,8 @@
     "setup": "node scripts/setup.mjs",
     "scan:secrets": "node scripts/formal_secret_scan.mjs",
     "check:config": "node scripts/validate-jsonc.mjs",
-    "db:migrate:local": "wrangler d1 execute lc-db --local --file=migrations/0001_init.sql --file=migrations/0002_wecom_settings.sql",
-    "db:migrate:remote": "wrangler d1 execute lc-db --remote --file=migrations/0001_init.sql --file=migrations/0002_wecom_settings.sql"
+    "db:migrate:local": "wrangler d1 execute livechat-db --local --file=migrations/0001_init.sql --file=migrations/0002_wecom_settings.sql",
+    "db:migrate:remote": "wrangler d1 execute livechat-db --remote --file=migrations/0001_init.sql --file=migrations/0002_wecom_settings.sql"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^5.20260815.1",

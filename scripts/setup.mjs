@@ -29,8 +29,8 @@ const ROOT = join(__dirname, '..');
 const CONFIG = join(ROOT, 'wrangler.jsonc');
 const MIGRATIONS = join(ROOT, 'migrations');
 
-const DB_NAME = 'lc-db';
-const R2_NAME = 'lc-media';
+const DB_NAME = 'livechat-db';
+const R2_NAME = 'livechat-media-r2';
 const ID_PLACEHOLDER = 'REPLACE_WITH_D1_DATABASE_ID';
 const UUID_RE = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i;
 
@@ -55,7 +55,8 @@ function wrangler(args, { input, env, noCi } = {}) {
     env: {
       ...process.env,
       // secret put 需要交互式确认，不能进 CI 模式
-      ...(noCi ? {} : { CI: '1', WRANGLER_LOG: 'warn' }),
+      // 注意：不要设 WRANGLER_LOG=warn，否则 d1 list 等正常输出会被抑制，脚本无法解析 ID
+      ...(noCi ? {} : { CI: '1' }),
       ...env,
     },
     timeout: 120_000,
@@ -95,7 +96,7 @@ async function ensureD1() {
     }
     warn(`D1 列表中存在 ${DB_NAME}，但未能解析 ID，将尝试 create 输出。`);
   }
-  const r = wrangler(['d1', 'create', DB_NAME, '--non-interactive']);
+  const r = wrangler(['d1', 'create', DB_NAME]);
   const text = (r.stdout + r.stderr) || '';
   const id = firstUuid(text);
   if (r.status === 0 && id) {
@@ -109,7 +110,18 @@ async function ensureD1() {
     ok(`D1 创建成功：${DB_NAME} (${id2})`);
     return id2;
   }
-  fail('创建 D1 失败，请检查 Token 是否包含 "D1 Edit" 权限。\n--- 输出 ---\n' + text + text2);
+  // 创建失败（例如"already exists"）时，再查一次列表复用现有 ID
+  const reList = wrangler(['d1', 'list']);
+  const reText = (reList.stdout + reList.stderr) || '';
+  const reLine = reText.split('\n').find((l) => l.includes(DB_NAME));
+  if (reLine) {
+    const id3 = firstUuid(reLine);
+    if (id3) {
+      ok(`D1 已存在（create 报已存在，复用）：${DB_NAME} (${id3})`);
+      return id3;
+    }
+  }
+  fail('创建 D1 失败，请检查 Token 是否包含 "D1 Edit" 权限。\n--- 输出 ---\n' + text + text2 + reText);
   process.exit(1);
 }
 

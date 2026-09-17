@@ -1,0 +1,45 @@
+# push 到 main 分支自动部署到 Cloudflare Workers
+# 前置：仓库 Settings → Secrets and variables → Actions 配置：
+#   CLOUDFLARE_API_TOKEN   — API Token（权限见 AGENTS.md 第 3 节）
+#   CLOUDFLARE_ACCOUNT_ID  — 账号 ID（Cloudflare 控制台右侧栏）
+name: Deploy Workers
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: # 允许在 Actions 页面手动触发
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22 # wrangler 4.x 要求 Node >= 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # 仓库中 database_id 保留占位符（AGENTS.md 要求），部署前从账号查询真实 ID 注入
+      - name: Resolve D1 database id and inject into config
+        run: |
+          ID=$(npx wrangler d1 list | awk '/livechat-db/{print $1; exit}')
+          if [ -z "$ID" ]; then
+            echo "ERROR: D1 database 'livechat-db' not found in account" >&2
+            exit 1
+          fi
+          sed -i "s/REPLACE_WITH_D1_DATABASE_ID/$ID/" wrangler.jsonc
+          echo "Injected D1 database id: $ID"
+
+      - name: Deploy to Cloudflare Workers
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy
