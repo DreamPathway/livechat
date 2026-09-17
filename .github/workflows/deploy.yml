@@ -29,7 +29,7 @@ jobs:
       # 仓库中 database_id 保留占位符（AGENTS.md 要求），部署前从账号查询真实 ID 注入
       - name: Resolve D1 database id and inject into config
         run: |
-          ID=$(npx wrangler d1 list | awk '/livechat-db/{print $1; exit}')
+          ID=$(npx wrangler d1 list | awk '/livechat-db/' | grep -oE '[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}' | head -n1)
           if [ -z "$ID" ]; then
             echo "ERROR: D1 database 'livechat-db' not found in account" >&2
             exit 1
