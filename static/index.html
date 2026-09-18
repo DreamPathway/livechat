@@ -104,7 +104,7 @@
             </div>
         </div>
 
-        <div class="header-tip">💡 请勿发送隐私信息，若相同ip他人可见；建议微信联系</div>
+        <div class="header-tip">💡 请勿发送隐私信息，建议微信联系</div>
 
         <div class="chat-messages" id="chatMessages">
             <div class="empty-chat">暂无消息，开始聊天吧 💬</div>
@@ -125,7 +125,20 @@
 
     <script>
         var CONFIG = {
-            clientId: '',
+            // 访客身份持久化：首次访问由浏览器生成随机 ID（非 IP 哈希），
+            // 同一网络下的不同访客会话互相隔离；跨页面/重开后继续同一会话
+            clientId: (function() {
+                try {
+                    var id = localStorage.getItem('lc_client_id');
+                    if (!id) {
+                        id = 'guest_' + (window.crypto && crypto.randomUUID
+                            ? crypto.randomUUID().replace(/-/g, '')
+                            : Date.now().toString(36) + Math.random().toString(36).slice(2, 12) + Math.random().toString(36).slice(2, 12));
+                        localStorage.setItem('lc_client_id', id);
+                    }
+                    return id;
+                } catch (e) { return ''; }
+            })(),
             userName: '',
             messagesUrl: '/api/chat',
             pollInterval: 3000
@@ -164,6 +177,7 @@
                     var data = JSON.parse(text);
                     if (data.success && data.client_id) {
                         CONFIG.clientId = data.client_id;
+                        try { localStorage.setItem('lc_client_id', data.client_id); } catch (e) {}
                         console.log('Client initialized with ID:', CONFIG.clientId);
                     }
                 } catch (e) {
