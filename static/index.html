@@ -78,11 +78,6 @@
         .preview-info .name { font-size: 13px; color: var(--text-primary); }
         .preview-info .size { font-size: 11px; color: var(--text-secondary); }
         .remove-preview { background: none; border: none; color: var(--danger-color); cursor: pointer; font-size: 20px; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
-
-        /* iframe 嵌入模式：铺满容器，去除卡片外观与双滚动条 */
-        body.embedded { padding: 0; }
-        body.embedded .chat-wrapper { width: 100%; height: 100vh; max-width: none; max-height: none; border-radius: 0; box-shadow: none; }
-        body.embedded .header-tip { padding: 6px 10px; font-size: 11px; }
     </style>
 </head>
 <body>
@@ -109,7 +104,7 @@
             </div>
         </div>
 
-        <div class="header-tip">💡 请勿发送密码、验证码等敏感信息</div>
+        <div class="header-tip">💡 请勿发送隐私信息，建议微信联系</div>
 
         <div class="chat-messages" id="chatMessages">
             <div class="empty-chat">暂无消息，开始聊天吧 💬</div>
@@ -129,9 +124,6 @@
     </div>
 
     <script>
-        // iframe 嵌入检测：被博客等站点嵌入时启用铺满模式（body.embedded）
-        try { if (window.self !== window.top) document.body.classList.add('embedded'); } catch (e) { document.body.classList.add('embedded'); }
-
         var CONFIG = {
             // 访客身份持久化：首次访问由浏览器生成随机 ID（非 IP 哈希），
             // 同一网络下的不同访客会话互相隔离；跨页面/重开后继续同一会话
